@@ -1,3 +1,5 @@
+/* eslint-disable no-console,no-plusplus */
+
 const SIZE = 32;
 const PER_ROW = 4;
 
@@ -25,11 +27,11 @@ const getVertexPosition = ([type, i, j]) => (
   type === 'v'
     ? {
       x: SIZE * (Number(j) + 1),
-      y: (Number(i) * SIZE) + (SIZE / 2)
+      y: (Number(i) * SIZE) + (SIZE / 2),
     }
     : {
       x: (Number(j) * SIZE) + (SIZE / 2),
-      y: SIZE * Number(i)
+      y: SIZE * Number(i),
     }
 );
 
@@ -39,21 +41,20 @@ const drawGrid = (gridSize, vertexList, path, usedSquares) => {
     for (let i = 0; i < gridSize + 1; i++) {
       lines.push(drawLine(
         { x: 0, y: i * SIZE },
-        { x: gridSize * SIZE, y: i * SIZE }
+        { x: gridSize * SIZE, y: i * SIZE },
       ));
       lines.push(drawLine(
         { x: i * SIZE, y: 0 },
-        { x: i * SIZE, y: gridSize * SIZE }
+        { x: i * SIZE, y: gridSize * SIZE },
       ));
     }
     return lines.join('');
-  }
+  };
 
-  const drawVertices = () =>
-    Object
-      .keys(vertexList)
-      .map(v => drawCircle(getVertexPosition(v), SIZE / 32, 'purple'))
-      .join('');
+  const drawVertices = () => Object
+    .keys(vertexList)
+    .map((v) => drawCircle(getVertexPosition(v), SIZE / 32, 'purple'))
+    .join('');
 
   const drawPath = () => {
     const lines = [];
@@ -63,14 +64,14 @@ const drawGrid = (gridSize, vertexList, path, usedSquares) => {
       lines.push(drawLine(
         getVertexPosition(startVertex),
         getVertexPosition(endVertex),
-        'red'
+        'red',
       ));
     }
     return lines.join('');
-  }
+  };
 
   const drawUsedSquares = () => usedSquares
-    .map(square => {
+    .map((square) => {
       const [i, j] = square.square;
       const color = square.wall === '1' ? 'green' : 'blue';
       const x = (Number(j) * SIZE) + (SIZE / 2);
@@ -85,22 +86,22 @@ const drawGrid = (gridSize, vertexList, path, usedSquares) => {
     ${drawPath()}
     ${drawUsedSquares()}
   `;
-}
+};
 
 const drawGrids = (gridSize, vertexList, pathList, usedSquaresList) => {
   const grids = [];
   for (let i = 0; i < pathList.length; i++) {
-    const grid = drawGrid(gridSize, vertexList, pathList[i], usedSquaresList[i])
+    const grid = drawGrid(gridSize, vertexList, pathList[i], usedSquaresList[i]);
     const xOffset = (i % PER_ROW) * (gridSize * SIZE + SIZE);
     const yOffset = Math.floor(i / PER_ROW) * (gridSize * SIZE + SIZE);
     grids.push(
-      `<g transform="translate(${xOffset} ${yOffset})">${grid}</g>`
+      `<g transform="translate(${xOffset} ${yOffset})">${grid}</g>`,
     );
   }
   return grids.join('');
-}
+};
 
-const drawSVG = contents =>`<?xml version="1.0" encoding="UTF-8" ?>
+const drawSVG = (contents) => `<?xml version="1.0" encoding="UTF-8" ?>
   <svg xmlns="http://www.w3.org/2000/svg">
     ${contents}
   </svg>
@@ -109,5 +110,5 @@ const drawSVG = contents =>`<?xml version="1.0" encoding="UTF-8" ?>
 module.exports = {
   drawGrid,
   drawGrids,
-  drawSVG
+  drawSVG,
 };
