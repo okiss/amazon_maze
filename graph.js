@@ -48,10 +48,10 @@ const constructGraph = (size) => {
 
   for (let i = 0; i < size; i++) {
     for (let j = 0; j < size - 1; j++) {
-      setEdge(h(i, j), v(i, j), { square: `${i}${j}`, wall: '-' });
-      setEdge(h(i + 1, j), v(i, j), { square: `${i}${j}`, wall: '+' });
-      setEdge(h(i, j + 1), v(i, j), { square: `${i}${j + 1}`, wall: '+' });
-      setEdge(h(i + 1, j + 1), v(i, j), { square: `${i}${j + 1}`, wall: '-' });
+      setEdge(h(i, j), v(i, j), { square: `${i}${j}`, wall: '0' });
+      setEdge(h(i + 1, j), v(i, j), { square: `${i}${j}`, wall: '1' });
+      setEdge(h(i, j + 1), v(i, j), { square: `${i}${j + 1}`, wall: '1' });
+      setEdge(h(i + 1, j + 1), v(i, j), { square: `${i}${j + 1}`, wall: '0' });
     }
   }
 

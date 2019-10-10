@@ -72,7 +72,7 @@ const drawGrid = (gridSize, vertexList, path, usedSquares) => {
   const drawUsedSquares = () => usedSquares
     .map(square => {
       const [i, j] = square.square;
-      const color = square.wall === '+' ? 'green' : 'blue';
+      const color = square.wall === '1' ? 'green' : 'blue';
       const x = (Number(j) * SIZE) + (SIZE / 2);
       const y = (Number(i) * SIZE) + (SIZE / 2);
       return drawCircle({ x, y }, SIZE / 4, color);

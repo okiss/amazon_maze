@@ -3,21 +3,12 @@ const {
   findAllOpenPaths
 } = require('./graph');
 const {
-  createMazeFromPath,
-  getAllPossibleMazes
+  countOpenGrids
 } = require('./grid');
-const {
-  drawGrids,
-  drawSVG
-} = require('./drawGrid');
 
-const { size, adjList, vertexList } = constructGraph(6)
+const { size, adjList, vertexList } = constructGraph(6);
 
-const paths = [...findAllOpenPaths(adjList, vertexList)]
-const mazes = paths.map(path => createMazeFromPath(size, adjList, path));
-const uniqueMazes = getAllPossibleMazes(mazes)
+const openPaths = [...findAllOpenPaths(adjList, vertexList)];
+const totalCount = countOpenGrids(size, adjList, openPaths, vertexList);
 
-// const svg = drawGrids(size, vertexList, paths, squares)
-// console.log(drawSVG(svg));
-
-console.log(uniqueMazes.size);
+console.log(totalCount);
