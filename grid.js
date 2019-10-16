@@ -1,4 +1,5 @@
 /* eslint-disable no-console,no-plusplus,no-continue */
+const { countAllSimpleMazes } = require('./slices');
 
 const createMazeFromPath = (size, adjList, path) => {
   const maze = Array.from({ length: size * size }).fill('0');
@@ -42,8 +43,10 @@ function generateMazesFromWildcards(size, addMaze, { maze, free }) {
 
 const countAllPossibleMazes = (size, mazeList) => {
   const mazeStorage = {};
+  let isEmpty = true;
 
   const addMaze = (maze) => {
+    isEmpty = false;
     const slices = [];
     for (let i = 0; i < size; i++) {
       const shift = (size - i - 1) * size;
@@ -72,60 +75,85 @@ const countAllPossibleMazes = (size, mazeList) => {
     generateMazesFromWildcards(size, addMaze, mazeList[i]);
   }
 
-  return countLeaves(mazeStorage);
+  return isEmpty ? 0 : countLeaves(mazeStorage);
 };
 
 const squaresUsedByPath = (adjList, path) => {
   const usedSquares = [];
+  const ret = [];
   for (let i = 0; i < path.length - 1; i++) {
     const v1 = path[i];
     const v2 = path[i + 1];
 
-    const { square } = adjList[v1][v2];
-    if (!usedSquares.includes(square)) {
-      usedSquares.push(square);
+    const square = adjList[v1][v2];
+    if (!usedSquares.includes(square.square)) {
+      usedSquares.push(square.square);
+      ret.push(square);
     }
   }
-  return usedSquares;
+  return ret;
 };
 
-const findPossibleConflicts = (size, adjList, openPaths) => openPaths
-  .map((path, index) => ({ path, index }))
-  .filter(({ path }) => {
-    const squares = squaresUsedByPath(adjList, path);
-    const minColumn = squares.reduce((min, [, j]) => Math.min(min, j), size - 1);
-    const maxColumn = squares.reduce((max, [, j]) => Math.max(max, j), 0);
-    return minColumn !== 0 || maxColumn !== size - 1;
-  });
+const findSimplePaths = (size, usedSquares) => usedSquares
+  .filter(({ squares }) => {
+    for (let i = 0; i < size; i++) {
+      if (squares.filter(({ square: [row] }) => Number(row) === i).length !== 2) {
+        return false;
+      }
+    }
+    return true;
+  })
+  .map(({ index }) => index);
 
-const countOpenGrids = (size, adjList, openPaths, { precise }) => {
-  const conflictingPaths = precise
-    ? findPossibleConflicts(size, adjList, openPaths)
-    : [];
+const findPossibleConflicts = (size, usedSquares, simplePaths) => usedSquares
+  .filter(({ squares, index }) => {
+    if (simplePaths.includes(index)) {
+      return false;
+    }
+    const columns = squares.map(({ square: [, column] }) => column);
+    return (Math.min(...columns) !== 0 || Math.max(...columns) !== size - 1);
+  })
+  .map(({ index }) => index);
 
-  const mazeList = conflictingPaths
-    .map(({ path, index }) => ({ maze: createMazeFromPath(size, adjList, path), index }));
+const countOpenGrids = (size, adjList, openPaths) => {
+  const usedSquaresList = openPaths
+    .map((path, index) => ({ squares: squaresUsedByPath(adjList, path), index }));
 
-  const conflictsCount = countAllPossibleMazes(
-    size,
-    mazeList.map(({ maze }) => maze),
-  );
+  const simplePaths = findSimplePaths(size, usedSquaresList);
 
-  const conflictingIndicess = conflictingPaths.map(({ index }) => index);
+  const conflictingPaths = findPossibleConflicts(size, usedSquaresList, simplePaths);
 
-  let totalGridCount = 0;
+  const mazeList = openPaths
+    .filter((_, i) => conflictingPaths.includes(i))
+    .map((path) => createMazeFromPath(size, adjList, path));
+  const conflictingPathsMazeCount = countAllPossibleMazes(size, mazeList);
+
+  const simplePathsMazeCount = countAllSimpleMazes(size);
+
+  let freeSquaresMazeCount = 0;
   for (let i = 0; i < openPaths.length; i++) {
-    if (conflictingIndicess.includes(i)) {
+    if (simplePaths.includes(i) || conflictingPaths.includes(i)) {
       continue;
     }
 
     const usedSquareCount = squaresUsedByPath(adjList, openPaths[i]).length;
     const availableSquareCount = size * size;
 
-    totalGridCount += 2 ** (availableSquareCount - usedSquareCount);
+    freeSquaresMazeCount += 2 ** (availableSquareCount - usedSquareCount);
   }
 
-  return totalGridCount + conflictsCount;
+  console.log('simple mazes from slices: ', simplePathsMazeCount);
+  console.log(
+    'simple mazes from generating all mazes: ',
+    countAllPossibleMazes(
+      size,
+      openPaths
+        .filter((_, i) => simplePaths.includes(i))
+        .map((path) => createMazeFromPath(size, adjList, path)),
+    ),
+  );
+
+  return freeSquaresMazeCount + conflictingPathsMazeCount + simplePathsMazeCount;
 };
 
 module.exports = {
