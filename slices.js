@@ -6,10 +6,9 @@
 const memoize = (fn) => {
   const store = {};
 
-  return (...args) => {
-    const key = args.join(':');
+  return (key) => {
     if (!store[key]) {
-      store[key] = fn(...args);
+      store[key] = fn(key);
     }
     return store[key];
   };
@@ -88,6 +87,9 @@ const applyTunnels = (positions, tunnels, antiTunnels) => {
   return { positions: movedPositions, tunnels: openTunnels };
 };
 
+const serializeState = (positions, tunnels) => JSON.stringify({ positions, tunnels });
+
+const deserializeState = (state) => JSON.parse(state);
 
 const countAllOpenMazes = (gridSize) => {
   const possibleRows = Array.from(
@@ -95,8 +97,10 @@ const countAllOpenMazes = (gridSize) => {
     (_, i) => i.toString(2).padStart(gridSize, '0'),
   );
 
-  const getNextRows = memoize((positions, tunnels) => possibleRows
+  const getNextRows = memoize((state) => possibleRows
     .map((row) => {
+      const { positions, tunnels } = deserializeState(state);
+
       // Find "anti-tunnels", which are parts of the next row that look like "\/". These allow the
       // path to turn upwards
       const antiTunnels = [...row.matchAll(/10/g)]
@@ -104,7 +108,7 @@ const countAllOpenMazes = (gridSize) => {
 
       const {
         positions: tunneledPositions,
-        tunnels: openTunnels
+        tunnels: openTunnels,
       } = applyTunnels(positions, tunnels, antiTunnels);
 
       // After the positions were passed through the tunnels, they are passed down through the row.
@@ -120,31 +124,32 @@ const countAllOpenMazes = (gridSize) => {
       const createdTunnels = [...row.matchAll(/01/g)]
         .map(({ index }) => [index, index + 1]);
 
-      const outcomingTunnels = [...movedTunnels, ...createdTunnels]
+      const outgoingTunnels = [...movedTunnels, ...createdTunnels]
         .sort(([p1], [p2]) => p1 - p2);
 
-
-      return { positions: outgoingPositions, tunnels: outcomingTunnels };
+      return outgoingPositions.length
+        ? serializeState(outgoingPositions, outgoingTunnels)
+        : null;
     })
-    .filter((row) => row.positions.length));
+    .filter((result) => result));
 
-  const countMazes = (level, positions, tunnels) => {
+  function countMazes(level, state) {
     if (level === gridSize) {
       return 1;
     }
 
     let count = 0;
-    const nextRows = getNextRows(positions, tunnels);
-    for (let i = 0; i < nextRows.length; i++) {
-      const row = nextRows[i];
-      count += countMazes(level + 1, row.positions, row.tunnels);
+    const nextRows = getNextRows(state);
+    const len = nextRows.length;
+    for (let i = 0; i < len; i++) {
+      count += countMazes(level + 1, nextRows[i]);
     }
 
     return count;
-  };
+  }
 
   const initialPositions = Array.from({ length: gridSize }, (_, i) => i);
-  return countMazes(0, initialPositions, []);
+  return countMazes(0, serializeState(initialPositions, []));
 };
 
 module.exports = {
