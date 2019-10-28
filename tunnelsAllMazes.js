@@ -3,17 +3,6 @@
 //  1: \
 //  0: /
 
-const memoize = (fn) => {
-  const store = {};
-
-  return (key) => {
-    if (!store[key]) {
-      store[key] = fn(key);
-    }
-    return store[key];
-  };
-};
-
 const movePosition = (position, row) => {
   if (position !== row.length - 1 && row.slice(position, position + 2) === '11') {
     return position + 1;
@@ -34,19 +23,18 @@ const applyTunnels = (positions, tunnels, antiTunnels) => {
         if (i === j) continue;
         const [t1Entry, t1Exit] = mergedTunnels[i];
         const [t2Entry, t2Exit] = mergedTunnels[j];
-        const newTunnel = antiTunnels
-          .map((at) => (
-            [t1Entry, t1Exit, t2Entry, t2Exit]
-              .filter((t) => !at.includes(t))
-              .sort((a, b) => a - b)
-          ))
-          .find((tunnel) => (
-            tunnel.length === 2
-            && !(
-              (t1Entry === tunnel[0] && t1Exit === tunnel[1])
-              || (t2Entry === tunnel[0] && t2Exit === tunnel[1])
-            )
-          ));
+        const connection = antiTunnels.find(([atEntry, atExit]) => (
+          (atEntry === t1Entry && atExit === t2Exit)
+          || (atEntry === t1Exit && atExit === t2Entry)
+          || (atEntry === t1Entry && atExit === t2Entry)
+          || (atEntry === t1Exit && atExit === t2Exit)
+        ));
+        let newTunnel;
+        if (connection) {
+          newTunnel = [t1Entry, t1Exit, t2Entry, t2Exit]
+            .filter((t) => !connection.includes(t))
+            .sort((a, b) => a - b);
+        }
 
         if (newTunnel) {
           mergedTunnels = mergedTunnels
@@ -98,13 +86,9 @@ const applyTunnels = (positions, tunnels, antiTunnels) => {
   return { positions: movedPositions, tunnels: openTunnels };
 };
 
-const serializeState = (positions, tunnels) => JSON.stringify({ positions, tunnels });
-
-const deserializeState = (state) => JSON.parse(state);
-
-const getNextRows = (possibleRows) => memoize((state) => possibleRows
+const getNextRows = (possibleRows) => (state) => possibleRows
   .map((row) => {
-    const { positions, tunnels } = deserializeState(state);
+    const [positions, tunnels, maze] = state;
 
     // Find "anti-tunnels", which are parts of the next row that look like "\/". These allow the
     // path to turn upwards
@@ -133,12 +117,12 @@ const getNextRows = (possibleRows) => memoize((state) => possibleRows
       .sort(([p1], [p2]) => p1 - p2);
 
     return outgoingPositions.length
-      ? serializeState(outgoingPositions, outgoingTunnels)
+      ? [outgoingPositions, outgoingTunnels, [...maze, row]]
       : null;
   })
-  .filter((result) => result));
+  .filter((result) => result);
 
-const countAllOpenMazes = (gridSize) => {
+const findAllOpenMazes = (gridSize) => {
   const possibleRows = Array.from(
     { length: 2 ** gridSize },
     (_, i) => i.toString(2).padStart(gridSize, '0'),
@@ -146,42 +130,25 @@ const countAllOpenMazes = (gridSize) => {
 
   const getNext = getNextRows(possibleRows);
 
-  function countMazes(level, state) {
+  function findMazes(level, state, mazes) {
     if (level === gridSize) {
-      return 1;
+      mazes.push(state[2]);
+      return;
     }
 
-    let count = 0;
     const nextRows = getNext(state);
     const len = nextRows.length;
     for (let i = 0; i < len; i++) {
-      count += countMazes(level + 1, nextRows[i]);
+      findMazes(level + 1, nextRows[i], mazes);
     }
-
-    return count;
   }
 
+  const mazes = [];
   const initialPositions = Array.from({ length: gridSize }, (_, i) => i);
-  return countMazes(0, serializeState(initialPositions, []));
-};
-
-const exampleMaze = () => {
-  const maze = [
-    '11010',
-    '00011',
-    '11110',
-    '00000',
-    '10000',
-  ];
-  const initialPositions = Array.from({ length: maze.length }, (_, i) => i);
-  let state = serializeState(initialPositions, []);
-  maze.forEach((row) => {
-    [state] = getNextRows([row])(state);
-    console.log(state);
-  });
+  findMazes(0, [initialPositions, [], []], mazes);
+  return mazes;
 };
 
 module.exports = {
-  countAllOpenMazes,
-  exampleMaze,
+  findAllOpenMazes,
 };

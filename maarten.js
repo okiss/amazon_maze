@@ -1,4 +1,4 @@
-/* eslint-disable no-plusplus, no-restricted-syntax */
+/* eslint-disable no-plusplus, no-restricted-syntax, no-console */
 
 //  1: \
 //  0: /
