@@ -1,14 +1,21 @@
 /* eslint-disable no-console */
 
 const {
-  countAllOpenMazes,
-} = require('./slices');
+  countAllOpenMazes: tunnelMethod,
+} = require('./tunnels');
+const {
+  countAllOpenMazes: maartenMethod,
+  exampleMaze,
+} = require('./maarten');
 
-[3, 4, 5, 6].forEach((gridSize) => {
-  console.time(`time ${gridSize}`);
-
-  const totalCount = countAllOpenMazes(gridSize);
-  console.log(`${gridSize}x${gridSize}`, totalCount);
-
-  console.timeEnd(`time ${gridSize}`);
+[3, 4, 5].forEach((gridSize) => {
+  const totalCount = tunnelMethod(gridSize);
+  console.log(`${gridSize}x${gridSize} tunnel`, totalCount);
 });
+
+[3, 4, 5].forEach((gridSize) => {
+  const totalCount = maartenMethod(gridSize);
+  console.log(`${gridSize}x${gridSize} maarten`, totalCount);
+});
+
+exampleMaze();
