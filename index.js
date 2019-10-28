@@ -2,25 +2,19 @@
 
 const {
   countAllOpenMazes: tunnelMethod,
-  exampleMaze,
 } = require('./tunnels');
 const {
   countAllOpenMazes: maartenMethod,
+  exampleMaze,
 } = require('./maarten');
-const {
-  printMissingMazes,
-} = require('./findMissingMazes');
 
 [3, 4, 5, 6].forEach((gridSize) => {
   const totalCount = tunnelMethod(gridSize);
-  console.log(`${gridSize}x${gridSize} tunnel`, totalCount);
+  console.log(`${gridSize}x${gridSize}`, totalCount);
 });
 
-[3, 4, 5, 6].forEach((gridSize) => {
-  const totalCount = maartenMethod(gridSize);
-  console.log(`${gridSize}x${gridSize} maarten`, totalCount);
-});
-
-exampleMaze();
-
-// printMissingMazes(5);
+// [3, 4, 5].forEach((gridSize) => {
+//   const totalCount = maartenMethod(gridSize);
+//   console.log(`${gridSize}x${gridSize}`, totalCount);
+// });
+// exampleMaze();

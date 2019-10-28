@@ -122,20 +122,11 @@ const exampleMaze = () => {
     '0011',
   ];
 
-  const m0 = getNextRows([maze[0]]);
-  const m1 = getNextRows([maze[1]]);
-  const m2 = getNextRows([maze[2]]);
-  const m3 = getNextRows([maze[3]]);
-  const initial = serializeState([1, 2, 3, 4]);
-  console.log(initial);
-  const r0 = m0(initial);
-  console.log(r0[0]);
-  const r1 = m1(r0);
-  console.log(r1[0]);
-  const r2 = m2(r1);
-  console.log(r2[0]);
-  const r3 = m3(r2);
-  console.log(r3[0]);
+  let state = serializeState([1, 2, 3, 4]);
+  maze.forEach((row) => {
+    [state] = getNextRows([row])(state);
+    console.log(state);
+  });
 };
 
 module.exports = {

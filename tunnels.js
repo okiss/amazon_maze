@@ -1,8 +1,5 @@
 /* eslint-disable no-plusplus, no-continue */
 
-//  1: \
-//  0: /
-
 const memoize = (fn) => {
   const store = {};
 
@@ -14,6 +11,10 @@ const memoize = (fn) => {
   };
 };
 
+const serializeState = (positions, tunnels) => JSON.stringify({ positions, tunnels });
+
+const deserializeState = (state) => JSON.parse(state);
+
 const movePosition = (position, row) => {
   if (position !== row.length - 1 && row.slice(position, position + 2) === '11') {
     return position + 1;
@@ -23,8 +24,8 @@ const movePosition = (position, row) => {
   return -1;
 };
 
-const applyTunnels = (positions, tunnels, antiTunnels) => {
-  // Merge tunnels which are connected with an anti-tunnel
+const applyTunnels = (positions, tunnels, connections) => {
+  // Merge tunnels which are connected with a connection ("\/" pattern on the grid)
   let mergedTunnels = tunnels;
   let didMerge = true;
   while (didMerge) {
@@ -34,7 +35,7 @@ const applyTunnels = (positions, tunnels, antiTunnels) => {
         if (i === j) continue;
         const [t1Entry, t1Exit] = mergedTunnels[i];
         const [t2Entry, t2Exit] = mergedTunnels[j];
-        const newTunnel = antiTunnels
+        const newTunnel = connections
           .map((at) => (
             [t1Entry, t1Exit, t2Entry, t2Exit]
               .filter((t) => !at.includes(t))
@@ -61,25 +62,25 @@ const applyTunnels = (positions, tunnels, antiTunnels) => {
     }
   }
 
-  // If a positon, an anti-tunnel, and a tunnel meet, move the position to the other side of the
+  // If a positon, a connection, and a tunnel meet, move the position to the other side of the
   // tunnel and close the tunnel
   let openTunnels = mergedTunnels;
   let movedPositions = positions;
-  for (let i = 0; i < antiTunnels.length; i++) {
-    const [at1, at2] = antiTunnels[i];
-    const leftTunnel = openTunnels.find(([, t]) => t === at1);
-    const rightTunnel = openTunnels.find(([t]) => t === at2);
+  for (let i = 0; i < connections.length; i++) {
+    const [c1, c2] = connections[i];
+    const leftTunnel = openTunnels.find(([, t]) => t === c1);
+    const rightTunnel = openTunnels.find(([t]) => t === c2);
 
     let movedPosition;
     let positionToRemove;
     let tunnelToRemove;
-    if (movedPositions.includes(at1) && rightTunnel) {
+    if (movedPositions.includes(c1) && rightTunnel) {
       [, movedPosition] = rightTunnel;
-      positionToRemove = movedPositions.indexOf(at1);
+      positionToRemove = movedPositions.indexOf(c1);
       tunnelToRemove = openTunnels.indexOf(rightTunnel);
-    } else if (movedPositions.includes(at2) && leftTunnel) {
+    } else if (movedPositions.includes(c2) && leftTunnel) {
       [movedPosition] = leftTunnel;
-      positionToRemove = movedPositions.indexOf(at2);
+      positionToRemove = movedPositions.indexOf(c2);
       tunnelToRemove = openTunnels.indexOf(leftTunnel);
     }
     if (movedPosition !== undefined) {
@@ -98,23 +99,19 @@ const applyTunnels = (positions, tunnels, antiTunnels) => {
   return { positions: movedPositions, tunnels: openTunnels };
 };
 
-const serializeState = (positions, tunnels) => JSON.stringify({ positions, tunnels });
-
-const deserializeState = (state) => JSON.parse(state);
-
 const getNextRows = (possibleRows) => memoize((state) => possibleRows
   .map((row) => {
     const { positions, tunnels } = deserializeState(state);
 
-    // Find "anti-tunnels", which are parts of the next row that look like "\/". These allow the
+    // Find connections, which are parts of the next row that look like "\/". These allow the
     // path to turn upwards
-    const antiTunnels = [...row.matchAll(/10/g)]
+    const connections = [...row.matchAll(/10/g)]
       .map(({ index }) => [index, index + 1]);
 
     const {
       positions: tunneledPositions,
       tunnels: openTunnels,
-    } = applyTunnels(positions, tunnels, antiTunnels);
+    } = applyTunnels(positions, tunnels, connections);
 
     // After the positions were passed through the tunnels, they are passed down through the row.
     // Positions and tunnel openings will move to new places or they will be removed. New tunnels
